@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Instant Verification</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+  <script src="blockchain.js"></script>
+  <style>
+    /* Consistent "Classic" Theme */
+    body { font-family: "Times New Roman", Times, serif; background-color: #f4f1ea; color: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #fff; padding: 40px; border: 1px solid #c0c0c0; box-shadow: 0 0 0 4px #f4f1ea, 0 0 0 5px #8b8b8b, 10px 10px 20px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
+    h1 { text-transform: uppercase; border-bottom: 3px double #333; padding-bottom: 10px; }
+    #status { font-size: 1.2rem; margin-top: 20px; font-weight: bold; padding: 15px; border: 1px solid #ccc; background: #fafafa; }
+    .loader { font-style: italic; color: #555; }
+    .success { color: #27ae60; border-color: #27ae60; background: #eafaf1; }
+    .fail { color: #c0392b; border-color: #c0392b; background: #fadbd8; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Document Registry</h1>
+    <p>Automated Verification System</p>
+    
+    <div id="status" class="loader">
+      Scanning Blockchain...<br>
+      Please wait.
+    </div>
+    
+    <div style="margin-top:20px; font-size: 0.9rem; color:#777;">
+      Document Hash:<br>
+      <span id="hashDisplay" style="font-family: monospace;">...</span>
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <a href="index.html" style="color: #333;">&larr; Return to Home</a>
+    </div>
+  </div>
+
+<script>
+  window.onload = async function() {
+    const statusDiv = document.getElementById("status");
+    const hashDisplay = document.getElementById("hashDisplay");
+
+    // 1. Get Hash from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = urlParams.get('hash');
+
+    if (!hash) {
+      statusDiv.innerHTML = "⚠️ Invalid Link.<br>No document hash found.";
+      statusDiv.classList.add("fail");
+      return;
+    }
+
+    hashDisplay.innerText = hash.substring(0, 20) + "...";
+
+    // 2. Verify on Blockchain
+    try {
+      // Small delay to ensure Ethers loads
+      statusDiv.innerText = "Connecting to Blockchain...";
+      
+      // Call the existing function from blockchain.js
+      const isValid = await verifyHashOnBlockchain(hash);
+
+      if (isValid) {
+        statusDiv.innerHTML = "✅ VERIFIED<br>Document is Authentic";
+        statusDiv.className = "success"; // Apply green style
+      } else {
+        statusDiv.innerHTML = "❌ UNVERIFIED<br>Document not found in registry";
+        statusDiv.className = "fail"; // Apply red style
+      }
+
+    } catch (error) {
+      console.error(error);
+      statusDiv.innerHTML = "⚠️ Network Error<br>Ensure you have a Web3 Wallet.";
+      statusDiv.className = "fail";
+    }
+  };
+</script>
+</body>
+</html>

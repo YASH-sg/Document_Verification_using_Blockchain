@@ -2,179 +2,118 @@
 <html lang="en">
 <head>
   <script>
-  // --- 🔒 GATEKEEPER SCRIPT ---
   (function checkAccess() {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
-
-    // 1. Check if user is logged in
-    if (!token) {
-      alert("⚠️ You must log in to access this page.");
-      window.location.href = "index.html"; 
-      return;
-    }
-
-    // 2. Check if user is the CORRECT role
-    if (role !== "issuer") {
-      alert("⛔ Access Denied: This dashboard is for Authorities only.");
-      window.location.href = "index.html"; 
-      return;
-    }
+    if (!token) { alert("⚠️ Login required."); window.location.href = "index.html"; return; }
+    if (role !== "issuer") { alert("⛔ Access Denied"); window.location.href = "index.html"; return; }
   })();
-
-  function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userRole");
-    window.location.href = "index.html";
-  }
-</script>
+  function logout() { localStorage.clear(); window.location.href = "index.html"; }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="blockchain.js"></script>
 
   <meta charset="UTF-8">
-  <title>Issuer Dashboard | Document Registry</title>
+  <title>Issuer Dashboard</title>
   <style>
-    /* Same Classic CSS Styles */
-    body {
-      font-family: "Times New Roman", Times, serif;
-      background-color: #f4f1ea;
-      color: #333;
-      padding: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-    h2 {
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      border-bottom: 3px double #333;
-      padding-bottom: 15px;
-      margin-bottom: 40px;
-      text-align: center;
-      color: #1a1a1a;
-    }
-    .box {
-      background: #fff;
-      padding: 30px;
-      margin-bottom: 30px;
-      width: 450px;
-      border: 1px solid #c0c0c0;
-      box-shadow: 
-        0 0 0 4px #f4f1ea,
-        0 0 0 5px #8b8b8b,
-        5px 10px 15px rgba(0,0,0,0.1);
-    }
-    h3 {
-      margin-top: 0;
-      font-size: 1.2rem;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
-      font-style: italic;
-      color: #444;
-    }
-    input[type="file"] {
-      font-family: "Times New Roman", serif;
-      margin-bottom: 15px;
-      padding: 10px;
-      background: #fafafa;
-      border: 1px solid #ccc;
-      width: 90%;
-    }
-    button {
-      background-color: #2c3e50;
-      color: white;
-      border: 1px solid #1a252f;
-      padding: 10px 25px;
-      cursor: pointer;
-      font-family: "Times New Roman", serif;
-      font-size: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: background 0.3s;
-      box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
-    }
-    button:hover {
-      background-color: #1a252f;
-      box-shadow: 1px 1px 0px rgba(0,0,0,0.2);
-    }
-    p {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #f9f9f9;
-      border-left: 3px solid #888;
-      font-size: 0.95rem;
-      word-break: break-all;
-      min-height: 20px;
-    }
+    /* PREVIOUS CSS (Kept same for consistency) */
+    body { font-family: "Times New Roman", Times, serif; background-color: #f4f1ea; color: #333; padding: 40px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    h2 { text-transform: uppercase; letter-spacing: 2px; border-bottom: 3px double #333; padding-bottom: 15px; margin-bottom: 40px; }
+    .box { background: #fff; padding: 30px; width: 450px; border: 1px solid #c0c0c0; box-shadow: 5px 10px 15px rgba(0,0,0,0.1); text-align: center; }
+    button { background-color: #2c3e50; color: white; border: 1px solid #1a252f; padding: 10px 25px; cursor: pointer; margin-top: 10px; }
+    button:hover { background-color: #1a252f; }
+    
+    /* NEW CSS for QR Section */
+    #qrSection { display: none; margin-top: 20px; border-top: 1px dashed #999; padding-top: 20px; }
+    #qrcode { margin-top: 15px; display: flex; justify-content: center; }
   </style>
 </head>
 <body>
   <h2>🏛️ Authority Dashboard</h2>
-  <button onclick="logout()" style="background: #c0392b; margin-top: 20px;">Logout</button>  
+  <button onclick="logout()" style="background: #c0392b;">Logout</button>  
   
   <div class="box">
-    <h3>I. Document Submission</h3>
+    <h3>Document Submission</h3>
     <input type="file" id="uploadFile" />
-    <br><br>
+    <br>
     <button onclick="uploadDocument()">Upload & Store</button>
-    <p id="uploadResult">Waiting for input...</p>
+    <p id="uploadResult" style="background:#f9f9f9; padding:10px; margin-top:10px;">Waiting for input...</p>
+
+    <div id="qrSection">
+      <h4>🎉 Verification Link Ready</h4>
+      <p>Do you want to generate a QR code for this document?</p>
+      <button onclick="generateQR()">Yes, Generate QR</button>
+      <div id="qrcode"></div>
+    </div>
   </div>
 
 <script>
   const API_URL = "http://localhost:5000/api";
-  
+  let currentDocHash = ""; // Store hash globally to use in QR generation
+
   async function uploadDocument() {
     const fileInput = document.getElementById("uploadFile");
     const resultText = document.getElementById("uploadResult");
+    const qrSection = document.getElementById("qrSection");
 
-    if (!fileInput.files.length) {
-      alert("Please select a file");
-      return;
-    }
+    // Reset UI
+    qrSection.style.display = "none";
+    document.getElementById("qrcode").innerHTML = ""; // Clear old QR
+
+    if (!fileInput.files.length) { alert("Please select a file"); return; }
     
     resultText.innerText = "Processing...";
 
     const formData = new FormData();
     formData.append("document", fileInput.files[0]);
-    
-    // Retrieve the token for authorization
     const token = localStorage.getItem("token");
 
     try {
       const res = await fetch(`${API_URL}/upload`, {
         method: "POST",
-        headers: {
-            // 🔒 Send the token to the backend guard
-            "Authorization": `Bearer ${token}` 
-        },
+        headers: { "Authorization": `Bearer ${token}` },
         body: formData
       });
 
-      // Handle expired or invalid tokens
-      if (res.status === 401 || res.status === 403) {
-          alert("Session expired. Please login again.");
-          window.location.href = "index.html";
-          return;
-      }
-
+      if (res.status === 401) { alert("Session expired."); logout(); return; }
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      resultText.innerText = "Hash Generated. Storing on Blockchain...";
       
-      if (!res.ok) {
-        throw new Error(data.message || "Upload failed");
-      }
-
-      resultText.innerText = "Generated Hash: " + data.hash;
-
-      // Calls function from blockchain.js
+      // Store on Blockchain
       await storeHashOnBlockchain(data.hash); 
-      resultText.innerText += "\n\nSuccessfully Stored on Blockchain.";
       
+      // Success!
+      resultText.innerText = "✅ Success! Hash: " + data.hash;
+      currentDocHash = data.hash; // Save hash for QR Code
+      qrSection.style.display = "block"; // Show the "Do you want QR" prompt
+
     } catch (err) {
       console.error(err);
       resultText.innerText = "Error: " + err.message;
     }
+  }
+function generateQR() {
+    if (!currentDocHash) return;
+    
+    // 🟢 FIX: Use 'replace' to keep the current folder path (e.g., /frontend/)
+    // If you are at ".../frontend/issuer.html", this makes ".../frontend/scan.html"
+    let baseUrl = window.location.href.split('?')[0]; // Remove any existing params
+    baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1); // Get folder path
+    const verificationLink = `${baseUrl}scan.html?hash=${currentDocHash}`;
+    
+    console.log("QR Link:", verificationLink);
+    
+    // Generate QR
+    const qrContainer = document.getElementById("qrcode");
+    qrContainer.innerHTML = ""; // Clear previous
+    new QRCode(qrContainer, {
+      text: verificationLink,
+      width: 128,
+      height: 128
+    });
   }
 </script>
 </body>

@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose"); 
-
 // IMPORT ROUTES
 const uploadRoute = require("./routes/upload");
 const authRoute = require("./routes/auth"); // <--- You were missing this!
@@ -10,6 +9,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
 
 // USE ROUTES
 app.use("/api", uploadRoute);
