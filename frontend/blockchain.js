@@ -110,3 +110,43 @@ async function verifyHashOnBlockchain(hash) {
     return false;
   }
 }
+
+
+// - APPEND THIS TO THE END OF THE FILE
+
+async function getIssuerHistory() {
+  if (!window.ethereum) return [];
+
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const userAddress = await signer.getAddress();
+    const contract = new ethers.Contract(contractAddress, contractABI, provider);
+
+    // 1. Get the current block number
+    const currentBlock = await provider.getBlockNumber();
+    
+    // 2. Calculate a safe starting block (e.g., 40,000 blocks ago)
+    // This prevents the "exceed maximum block range" error
+    let fromBlock = currentBlock - 40000;
+    if (fromBlock < 0) fromBlock = 0;
+
+    // Filter: Look for 'DocumentStored' events where 'sender' is the user
+    const filter = contract.filters.DocumentStored(null, userAddress);
+    
+    // 3. Fetch events ONLY within the safe range
+    console.log(`Scanning from block ${fromBlock} to ${currentBlock}...`);
+    const events = await contract.queryFilter(filter, fromBlock, "latest");
+
+    // Format the data (Newest first)
+    return events.reverse().map(event => ({
+      docHash: event.args[0], 
+      txHash: event.transactionHash,
+      block: event.blockNumber
+    }));
+
+  } catch (err) {
+    console.error("Error fetching history:", err);
+    return [];
+  }
+}

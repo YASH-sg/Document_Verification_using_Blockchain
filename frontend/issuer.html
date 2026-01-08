@@ -2,14 +2,17 @@
 <html lang="en">
 <head>
   <script>
+  // --- 🔒 GATEKEEPER SCRIPT ---
   (function checkAccess() {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
     if (!token) { alert("⚠️ Login required."); window.location.href = "index.html"; return; }
     if (role !== "issuer") { alert("⛔ Access Denied"); window.location.href = "index.html"; return; }
   })();
+  
   function logout() { localStorage.clear(); window.location.href = "index.html"; }
   </script>
+
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="blockchain.js"></script>
@@ -17,21 +20,69 @@
   <meta charset="UTF-8">
   <title>Issuer Dashboard</title>
   <style>
-    /* PREVIOUS CSS (Kept same for consistency) */
-    body { font-family: "Times New Roman", Times, serif; background-color: #f4f1ea; color: #333; padding: 40px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-    h2 { text-transform: uppercase; letter-spacing: 2px; border-bottom: 3px double #333; padding-bottom: 15px; margin-bottom: 40px; }
-    .box { background: #fff; padding: 30px; width: 450px; border: 1px solid #c0c0c0; box-shadow: 5px 10px 15px rgba(0,0,0,0.1); text-align: center; }
+    /* SHARED CLASSIC THEME */
+    body { font-family: "Times New Roman", Times, serif; background-color: #f4f1ea; color: #333; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    
+    /* HEADER & MENU STYLES */
+    .menu-btn { position: absolute; top: 20px; left: 20px; font-size: 2rem; cursor: pointer; background: #1a252f; border: none; z-index: 1000; }
+    
+    /* SIDEBAR DRAWER */
+    .sidebar {
+      height: 100%; width: 0; position: fixed; z-index: 999; top: 0; left: 0;
+      background-color: #1a252f; overflow-x: hidden; transition: 0.3s; padding-top: 60px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+    }
+    .sidebar a {
+      padding: 10px 15px 10px 30px; text-decoration: none; font-size: 1.1rem; color: #ffffff; display: block; transition: 0.3s;
+      font-family: "Times New Roman", serif; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .sidebar a:hover { background-color: #c20d0d; color: #fff; }
+    .close-btn { position: absolute; top: 10px; right: 20px; font-size: 2rem; margin-left: 50px; }
+
+    /* MAIN CONTENT */
+    h2 { text-transform: uppercase; letter-spacing: 2px; border-bottom: 3px double #333; padding-bottom: 15px; margin-top: 50px; margin-bottom: 40px; }
+    
+    .box { background: #fff; padding: 30px; width: 450px; border: 1px solid #c0c0c0; box-shadow: 5px 10px 15px rgba(0,0,0,0.1); text-align: center; margin-bottom: 30px;}
+    
     button { background-color: #2c3e50; color: white; border: 1px solid #1a252f; padding: 10px 25px; cursor: pointer; margin-top: 10px; }
     button:hover { background-color: #1a252f; }
+    input[type="file"] { margin-bottom: 15px; padding: 10px; background: #fafafa; border: 1px solid #ccc; width: 90%; }
     
-    /* NEW CSS for QR Section */
     #qrSection { display: none; margin-top: 20px; border-top: 1px dashed #999; padding-top: 20px; }
     #qrcode { margin-top: 15px; display: flex; justify-content: center; }
+
+    /* HISTORY MODAL */
+    .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
+    .modal-content { 
+      background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; 
+      max-height: 80vh; overflow-y: auto;
+      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
+    .close-modal { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+    .close-modal:hover { color: black; }
+
+    /* HISTORY TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #2c3e50; color: white; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .hash-cell { font-family: monospace; color: #555; word-break: break-all; }
   </style>
 </head>
 <body>
+
+  <button class="menu-btn" onclick="openNav()">&#9776;</button>
+
+  <div id="mySidebar" class="sidebar">
+    <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
+    <div style="color: #ffffff; padding: 30 30px; font-size: 0.8rem; margin-bottom: 10px;">Menu</div>
+    <a href="#" onclick="openHistory()">📜 Transaction Details</a>
+    <a href="#">⚙️ Settings (Future)</a>
+    <a href="javascript:void(0)" onclick="logout()" style="color: #e74c3c;">🚪 Logout</a>
+  </div>
+
   <h2>🏛️ Authority Dashboard</h2>
-  <button onclick="logout()" style="background: #c0392b;">Logout</button>  
   
   <div class="box">
     <h3>Document Submission</h3>
@@ -48,23 +99,90 @@
     </div>
   </div>
 
+  <div id="historyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="margin:0;">Blockchain Transaction History</h3>
+        <span class="close-modal" onclick="closeHistory()">&times;</span>
+      </div>
+      <p style="font-style: italic; font-size: 0.9rem;">Showing documents issued by your wallet address.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Block</th>
+            <th>Document Hash (SHA-256)</th>
+            <th>Transaction Hash</th>
+          </tr>
+        </thead>
+        <tbody id="historyTableBody">
+          </tbody>
+      </table>
+    </div>
+  </div>
+
 <script>
   const API_URL = "http://localhost:5000/api";
-  let currentDocHash = ""; // Store hash globally to use in QR generation
+  let currentDocHash = ""; 
 
+  /* --- MENU LOGIC --- */
+  function openNav() { document.getElementById("mySidebar").style.width = "250px"; }
+  function closeNav() { document.getElementById("mySidebar").style.width = "0"; }
+
+  /* --- HISTORY MODAL LOGIC --- */
+  async function openHistory() {
+    closeNav(); // Close sidebar first
+    document.getElementById("historyModal").style.display = "block";
+    
+    const tbody = document.getElementById("historyTableBody");
+    tbody.innerHTML = "<tr><td colspan='3'>Loading data from Blockchain...</td></tr>";
+
+    // Call the NEW function in blockchain.js
+    const transactions = await getIssuerHistory();
+
+    tbody.innerHTML = ""; // Clear loading message
+
+    if (transactions.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='3'>No transactions found for this wallet.</td></tr>";
+      return;
+    }
+
+    transactions.forEach(tx => {
+      const row = `
+        <tr>
+          <td>${tx.block}</td>
+          <td class="hash-cell">${tx.docHash}</td>
+          <td class="hash-cell"><a href="https://sepolia.etherscan.io/tx/${tx.txHash}" target="_blank">View</a> ${tx.txHash.substring(0,10)}...</td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    });
+  }
+
+  function closeHistory() {
+    document.getElementById("historyModal").style.display = "none";
+  }
+
+  // Close modal if user clicks outside of it
+  window.onclick = function(event) {
+    const modal = document.getElementById("historyModal");
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+
+  /* --- EXISTING UPLOAD LOGIC --- */
   async function uploadDocument() {
     const fileInput = document.getElementById("uploadFile");
     const resultText = document.getElementById("uploadResult");
     const qrSection = document.getElementById("qrSection");
 
-    // Reset UI
     qrSection.style.display = "none";
-    document.getElementById("qrcode").innerHTML = ""; // Clear old QR
+    document.getElementById("qrcode").innerHTML = ""; 
 
     if (!fileInput.files.length) { alert("Please select a file"); return; }
     
     resultText.innerText = "Processing...";
-
     const formData = new FormData();
     formData.append("document", fileInput.files[0]);
     const token = localStorage.getItem("token");
@@ -85,35 +203,31 @@
       // Store on Blockchain
       await storeHashOnBlockchain(data.hash); 
       
-      // Success!
       resultText.innerText = "✅ Success! Hash: " + data.hash;
-      currentDocHash = data.hash; // Save hash for QR Code
-      qrSection.style.display = "block"; // Show the "Do you want QR" prompt
+      currentDocHash = data.hash; 
+      qrSection.style.display = "block"; 
 
     } catch (err) {
       console.error(err);
-      resultText.innerText = "Error: " + err.message;
+
+      let userMessage = "Something went wrong. Please try later."
+
+      if(err.code === "ACTION_REJECTED") {
+        userMessage = "Transaction cancelled by user."
+      }
+        else if (err.code === "CALL_EXCEPTION") {
+        userMessage = "Document Already Exist on Blockchain."
+        }
+      resultText.innerText = userMessage;
     }
   }
-function generateQR() {
+
+  function generateQR() {
     if (!currentDocHash) return;
-    
-    // 🟢 FIX: Use 'replace' to keep the current folder path (e.g., /frontend/)
-    // If you are at ".../frontend/issuer.html", this makes ".../frontend/scan.html"
-    let baseUrl = window.location.href.split('?')[0]; // Remove any existing params
-    baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1); // Get folder path
-    const verificationLink = `${baseUrl}scan.html?hash=${currentDocHash}`;
-    
-    console.log("QR Link:", verificationLink);
-    
-    // Generate QR
+    const verificationLink = `${window.location.origin}/scan.html?hash=${currentDocHash}`;
     const qrContainer = document.getElementById("qrcode");
-    qrContainer.innerHTML = ""; // Clear previous
-    new QRCode(qrContainer, {
-      text: verificationLink,
-      width: 128,
-      height: 128
-    });
+    qrContainer.innerHTML = ""; 
+    new QRCode(qrContainer, { text: verificationLink, width: 128, height: 128 });
   }
 </script>
 </body>
