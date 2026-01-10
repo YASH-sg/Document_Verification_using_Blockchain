@@ -1,152 +1,83 @@
-const contractAddress = "0x43546220a660cB1851134fA3F6287047482d9591";
+// blockchain.js
+// - Address from your original file
+const contractAddress = "0xEB024254d73D078A7719CAC39deD3B0E8D6C3Fc2";
 
+// - ABI matching your Solidity contract
 const contractABI = [
-  
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "hash",
-				"type": "string"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "DocumentStored",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "_hash",
-				"type": "string"
-			}
-		],
-		"name": "storeHash",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "_hash",
-				"type": "string"
-			}
-		],
-		"name": "verifyHash",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "fileHash", "type": "bytes32" },
+      { "indexed": false, "internalType": "string", "name": "ipfsCid", "type": "string" },
+      { "indexed": false, "internalType": "address", "name": "owner", "type": "address" }
+    ],
+    "name": "DocumentRegistered",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "_fileHash", "type": "bytes32" },
+      { "internalType": "string", "name": "_ipfsCid", "type": "string" }
+    ],
+    "name": "registerDocument",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "_fileHash", "type": "bytes32" }
+    ],
+    "name": "getCid",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
 ];
 
-async function storeHashOnBlockchain(hash) {
-  if (!window.ethereum) {
-    alert("MetaMask not installed");
-    return;
-  }
+// --- 1. Store Hash + CID (Issuer) ---
+async function registerDocumentOnBlockchain(hash, cid) {
+  if (!window.ethereum) return alert("MetaMask not installed");
 
-  // Request account access
   await window.ethereum.request({ method: "eth_requestAccounts" });
-
   const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
+  const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-  const contract = new ethers.Contract(
-    contractAddress,
-    contractABI,
-    signer
-  );
+  // Ensure hash is strictly 0x... (32 bytes)
+  if (!hash.startsWith("0x")) hash = "0x" + hash;
 
-  // MetaMask confirmation will pop up here
-  const tx = await contract.storeHash(hash);
-  await tx.wait();
-
-  alert("✅ Hash stored on blockchain successfully!");
-}
-// ... existing code (contractAddress, contractABI, storeHashOnBlockchain) ...
-
-// Adapted from your readHash.js for the Browser
-async function verifyHashOnBlockchain(hash) {
+  console.log(`Registering: Hash=${hash}, CID=${cid}`);
+  
   try {
-    // 1. Check for MetaMask
-    if (!window.ethereum) {
-      alert("MetaMask not installed");
-      return false;
-    }
-
-    // 2. Use BrowserProvider (connects to your MetaMask wallet)
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    
-    // 3. Create Contract Instance (Read-only connection is fine for verification)
-    const contract = new ethers.Contract(contractAddress, contractABI, provider);
-
-    // 4. Call the verifyHash function (matches ABI in readHash.js)
-    console.log("Verifying hash on blockchain:", hash);
-    const isValid = await contract.verifyHash(hash);
-    
-    console.log("Is Valid?", isValid);
-    return isValid;
-
+      const tx = await contract.registerDocument(hash, cid);
+      console.log("Transaction sent:", tx.hash);
+      await tx.wait();
+      alert(`✅ Success! Document linked to IPFS CID: ${cid}`);
   } catch (error) {
-    console.error("Error verifying hash:", error);
-    alert("Check console for error details");
-    return false;
+      console.error("Blockchain Error:", error);
+      alert("Transaction failed: " + (error.reason || error.message));
   }
 }
 
-
-// - APPEND THIS TO THE END OF THE FILE
-
-async function getIssuerHistory() {
-  if (!window.ethereum) return [];
+// --- 2. Verify & Get CID (Verifier) ---
+async function verifyHashOnBlockchain(hash) {
+  if (!window.ethereum) return false;
 
   try {
     const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const userAddress = await signer.getAddress();
     const contract = new ethers.Contract(contractAddress, contractABI, provider);
 
-    // 1. Get the current block number
-    const currentBlock = await provider.getBlockNumber();
-    
-    // 2. Calculate a safe starting block (e.g., 40,000 blocks ago)
-    // This prevents the "exceed maximum block range" error
-    let fromBlock = currentBlock - 40000;
-    if (fromBlock < 0) fromBlock = 0;
+    if (!hash.startsWith("0x")) hash = "0x" + hash;
 
-    // Filter: Look for 'DocumentStored' events where 'sender' is the user
-    const filter = contract.filters.DocumentStored(null, userAddress);
-    
-    // 3. Fetch events ONLY within the safe range
-    console.log(`Scanning from block ${fromBlock} to ${currentBlock}...`);
-    const events = await contract.queryFilter(filter, fromBlock, "latest");
+    const cid = await contract.getCid(hash);
+    console.log("Found CID:", cid);
+    return cid; 
 
-    // Format the data (Newest first)
-    return events.reverse().map(event => ({
-      docHash: event.args[0], 
-      txHash: event.transactionHash,
-      block: event.blockNumber
-    }));
-
-  } catch (err) {
-    console.error("Error fetching history:", err);
-    return [];
+  } catch (error) {
+    console.warn("Hash not found on blockchain");
+    return false; 
   }
 }

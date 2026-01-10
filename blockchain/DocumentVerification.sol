@@ -1,21 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract DocumentVerification {
+contract DocumentRegistry {
+    // We map the SHA-256 hash (bytes32) to the IPFS CID (string)
+    mapping(bytes32 => string) private hashToCid;
+    mapping(bytes32 => address) private docOwner;
 
-    mapping(string => bool) private storedHashes;
+    event DocumentRegistered(bytes32 indexed fileHash, string ipfsCid, address owner);
 
-    event DocumentStored(string hash, address indexed sender);
+    function registerDocument(bytes32 _fileHash, string memory _ipfsCid) public {
+        require(bytes(hashToCid[_fileHash]).length == 0, "Document already registered!");
+        
+        hashToCid[_fileHash] = _ipfsCid;
+        docOwner[_fileHash] = msg.sender;
 
-    function storeHash(string memory _hash) public {
-        require(!storedHashes[_hash], "Document already exists");
-
-        storedHashes[_hash] = true;
-
-        emit DocumentStored(_hash, msg.sender);
+        emit DocumentRegistered(_fileHash, _ipfsCid, msg.sender);
     }
 
-    function verifyHash(string memory _hash) public view returns (bool) {
-        return storedHashes[_hash];
+    function getCid(bytes32 _fileHash) public view returns (string memory) {
+        require(bytes(hashToCid[_fileHash]).length != 0, "Document not found!");
+        return hashToCid[_fileHash];
     }
 }

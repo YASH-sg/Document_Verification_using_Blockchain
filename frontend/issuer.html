@@ -6,8 +6,9 @@
   (function checkAccess() {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
-    if (!token) { alert("⚠️ Login required."); window.location.href = "index.html"; return; }
-    if (role !== "issuer") { alert("⛔ Access Denied"); window.location.href = "index.html"; return; }
+    // Remove comments below to enable login protection
+    // if (!token) { alert("⚠️ Login required."); window.location.href = "index.html"; return; }
+    // if (role !== "issuer") { alert("⛔ Access Denied"); window.location.href = "index.html"; return; }
   })();
   
   function logout() { localStorage.clear(); window.location.href = "index.html"; }
@@ -15,72 +16,22 @@
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="blockchain.js"></script>
 
   <meta charset="UTF-8">
   <title>Issuer Dashboard</title>
   <style>
     /* SHARED CLASSIC THEME */
     body { font-family: "Times New Roman", Times, serif; background-color: #f4f1ea; color: #333; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-    
-    /* HEADER & MENU STYLES */
-    .menu-btn { position: absolute; top: 20px; left: 20px; font-size: 2rem; cursor: pointer; background: #1a252f; border: none; z-index: 1000; }
-    
-    /* SIDEBAR DRAWER */
-    .sidebar {
-      height: 100%; width: 0; position: fixed; z-index: 999; top: 0; left: 0;
-      background-color: #1a252f; overflow-x: hidden; transition: 0.3s; padding-top: 60px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.5);
-    }
-    .sidebar a {
-      padding: 10px 15px 10px 30px; text-decoration: none; font-size: 1.1rem; color: #ffffff; display: block; transition: 0.3s;
-      font-family: "Times New Roman", serif; text-transform: uppercase; letter-spacing: 1px;
-    }
-    .sidebar a:hover { background-color: #c20d0d; color: #fff; }
-    .close-btn { position: absolute; top: 10px; right: 20px; font-size: 2rem; margin-left: 50px; }
-
-    /* MAIN CONTENT */
     h2 { text-transform: uppercase; letter-spacing: 2px; border-bottom: 3px double #333; padding-bottom: 15px; margin-top: 50px; margin-bottom: 40px; }
-    
     .box { background: #fff; padding: 30px; width: 450px; border: 1px solid #c0c0c0; box-shadow: 5px 10px 15px rgba(0,0,0,0.1); text-align: center; margin-bottom: 30px;}
-    
     button { background-color: #2c3e50; color: white; border: 1px solid #1a252f; padding: 10px 25px; cursor: pointer; margin-top: 10px; }
     button:hover { background-color: #1a252f; }
     input[type="file"] { margin-bottom: 15px; padding: 10px; background: #fafafa; border: 1px solid #ccc; width: 90%; }
-    
     #qrSection { display: none; margin-top: 20px; border-top: 1px dashed #999; padding-top: 20px; }
     #qrcode { margin-top: 15px; display: flex; justify-content: center; }
-
-    /* HISTORY MODAL */
-    .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
-    .modal-content { 
-      background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; 
-      max-height: 80vh; overflow-y: auto;
-      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-    }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
-    .close-modal { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
-    .close-modal:hover { color: black; }
-
-    /* HISTORY TABLE */
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #2c3e50; color: white; }
-    tr:nth-child(even) { background-color: #f9f9f9; }
-    .hash-cell { font-family: monospace; color: #555; word-break: break-all; }
   </style>
 </head>
 <body>
-
-  <button class="menu-btn" onclick="openNav()">&#9776;</button>
-
-  <div id="mySidebar" class="sidebar">
-    <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
-    <div style="color: #ffffff; padding: 30 30px; font-size: 0.8rem; margin-bottom: 10px;">Menu</div>
-    <a href="#" onclick="openHistory()">📜 Transaction Details</a>
-    <a href="#">⚙️ Settings (Future)</a>
-    <a href="javascript:void(0)" onclick="logout()" style="color: #e74c3c;">🚪 Logout</a>
-  </div>
 
   <h2>🏛️ Authority Dashboard</h2>
   
@@ -88,7 +39,7 @@
     <h3>Document Submission</h3>
     <input type="file" id="uploadFile" />
     <br>
-    <button onclick="uploadDocument()">Upload & Store</button>
+    <button onclick="uploadDocument()">Upload to IPFS & Blockchain</button>
     <p id="uploadResult" style="background:#f9f9f9; padding:10px; margin-top:10px;">Waiting for input...</p>
 
     <div id="qrSection">
@@ -99,95 +50,61 @@
     </div>
   </div>
 
-  <div id="historyModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 style="margin:0;">Blockchain Transaction History</h3>
-        <span class="close-modal" onclick="closeHistory()">&times;</span>
-      </div>
-      <p style="font-style: italic; font-size: 0.9rem;">Showing documents issued by your wallet address.</p>
-      
-      <table>
-        <thead>
-          <tr>
-            <th>Block</th>
-            <th>Document Hash (SHA-256)</th>
-            <th>Transaction Hash</th>
-          </tr>
-        </thead>
-        <tbody id="historyTableBody">
-          </tbody>
-      </table>
-    </div>
-  </div>
-
 <script>
+  // --- 1. CONFIGURATION ---
+  const PINATA_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiI5YWYyNjhjMi03ZmNkLTQzZjAtYTY2Ny1mMDI3MzZiNTQzZWUiLCJlbWFpbCI6InNhbmRpcGdhd2FuZGU5MDFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6Ijk4MjBlNzQ1YmY2OGJmMTRkNTlkIiwic2NvcGVkS2V5U2VjcmV0IjoiMmEwN2ZjZjIxMTg2NWQ4Mzc0ODUzOTBjZGUxYzlkMTA1NjdmMGE5YjMyZWQ1ODQ3MzZkYzA0NTQwMTQxMTkxMCIsImV4cCI6MTc5OTM4NTg5MH0.7pfKyup41zCLFKMrijR_s4wsHXXYJToMHfEpEpNg5yI";
   const API_URL = "http://localhost:5000/api";
-  let currentDocHash = ""; 
+  const contractAddress = "0xEB024254d73D078A7719CAC39deD3B0E8D6C3Fc2"; //
+  
+  const contractABI = [
+    { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "bytes32", "name": "fileHash", "type": "bytes32" }, { "indexed": false, "internalType": "string", "name": "ipfsCid", "type": "string" }, { "indexed": false, "internalType": "address", "name": "owner", "type": "address" } ], "name": "DocumentRegistered", "type": "event" },
+    { "inputs": [ { "internalType": "bytes32", "name": "_fileHash", "type": "bytes32" }, { "internalType": "string", "name": "_ipfsCid", "type": "string" } ], "name": "registerDocument", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
+  ];
 
-  /* --- MENU LOGIC --- */
-  function openNav() { document.getElementById("mySidebar").style.width = "250px"; }
-  function closeNav() { document.getElementById("mySidebar").style.width = "0"; }
-
-  /* --- HISTORY MODAL LOGIC --- */
-  async function openHistory() {
-    closeNav(); // Close sidebar first
-    document.getElementById("historyModal").style.display = "block";
+  // --- 2. INTERNAL BLOCKCHAIN FUNCTION ---
+  // We define this directly here to avoid "ReferenceError"
+  async function registerDocumentOnBlockchain(hash, cid) {
+    console.log("Starting blockchain registration...");
     
-    const tbody = document.getElementById("historyTableBody");
-    tbody.innerHTML = "<tr><td colspan='3'>Loading data from Blockchain...</td></tr>";
-
-    // Call the NEW function in blockchain.js
-    const transactions = await getIssuerHistory();
-
-    tbody.innerHTML = ""; // Clear loading message
-
-    if (transactions.length === 0) {
-      tbody.innerHTML = "<tr><td colspan='3'>No transactions found for this wallet.</td></tr>";
-      return;
+    if (!window.ethereum) {
+        throw new Error("MetaMask is not installed!");
     }
 
-    transactions.forEach(tx => {
-      const row = `
-        <tr>
-          <td>${tx.block}</td>
-          <td class="hash-cell">${tx.docHash}</td>
-          <td class="hash-cell"><a href="https://sepolia.etherscan.io/tx/${tx.txHash}" target="_blank">View</a> ${tx.txHash.substring(0,10)}...</td>
-        </tr>
-      `;
-      tbody.innerHTML += row;
-    });
+    // Connect Wallet
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    
+    // Connect Contract
+    const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+    // Format Hash
+    if (!hash.startsWith("0x")) hash = "0x" + hash;
+
+    // Send Transaction
+    const tx = await contract.registerDocument(hash, cid);
+    console.log("Tx Sent:", tx.hash);
+    
+    // Wait for confirmation
+    await tx.wait();
+    console.log("Tx Confirmed");
   }
 
-  function closeHistory() {
-    document.getElementById("historyModal").style.display = "none";
-  }
-
-  // Close modal if user clicks outside of it
-  window.onclick = function(event) {
-    const modal = document.getElementById("historyModal");
-    if (event.target == modal) {
-      modal.style.display = "none";
-    }
-  }
-
-  /* --- EXISTING UPLOAD LOGIC --- */
+  // --- 3. UPLOAD LOGIC ---
   async function uploadDocument() {
     const fileInput = document.getElementById("uploadFile");
     const resultText = document.getElementById("uploadResult");
-    const qrSection = document.getElementById("qrSection");
+    const file = fileInput.files[0];
 
-    qrSection.style.display = "none";
-    document.getElementById("qrcode").innerHTML = ""; 
-
-    if (!fileInput.files.length) { alert("Please select a file"); return; }
+    if (!file) { alert("Please select a file"); return; }
     
-    resultText.innerText = "Processing...";
+    resultText.innerText = "⏳ Step 1: Hashing File (Server)...";
     const formData = new FormData();
-    formData.append("document", fileInput.files[0]);
+    formData.append("document", file);
     const token = localStorage.getItem("token");
 
     try {
+      // A. Get Hash from Backend
       const res = await fetch(`${API_URL}/upload`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
@@ -196,35 +113,44 @@
 
       if (res.status === 401) { alert("Session expired."); logout(); return; }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!data.hash) throw new Error("Server failed to return hash");
+      
+      const docHash = data.hash;
+      console.log("Hash received:", docHash);
 
-      resultText.innerText = "Hash Generated. Storing on Blockchain...";
+      // B. Upload to Pinata (IPFS)
+      resultText.innerText = "⏳ Step 2: Uploading to IPFS...";
+      const pinataData = new FormData();
+      pinataData.append('file', file);
       
-      // Store on Blockchain
-      await storeHashOnBlockchain(data.hash); 
+      const pinRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${PINATA_JWT}` },
+          body: pinataData
+      });
+      const pinJson = await pinRes.json();
+      const ipfsCid = pinJson.IpfsHash;
+      console.log("IPFS CID:", ipfsCid);
+
+      // C. Register on Blockchain
+      resultText.innerText = `⏳ Step 3: Blockchain Transaction... (Check MetaMask)`;
       
-      resultText.innerText = "✅ Success! Hash: " + data.hash;
-      currentDocHash = data.hash; 
-      qrSection.style.display = "block"; 
+      // CALL INTERNAL FUNCTION
+      await registerDocumentOnBlockchain(docHash, ipfsCid);
+      
+      resultText.innerText = `✅ Success! \nHash: ${docHash} \nCID: ${ipfsCid}`;
+      window.currentDocHash = docHash; // Save for QR
+      document.getElementById("qrSection").style.display = "block";
 
     } catch (err) {
       console.error(err);
-
-      let userMessage = "Something went wrong. Please try later."
-
-      if(err.code === "ACTION_REJECTED") {
-        userMessage = "Transaction cancelled by user."
-      }
-        else if (err.code === "CALL_EXCEPTION") {
-        userMessage = "Document Already Exist on Blockchain."
-        }
-      resultText.innerText = userMessage;
+      resultText.innerText = "❌ Error: " + (err.reason || err.message);
     }
   }
 
   function generateQR() {
-    if (!currentDocHash) return;
-    const verificationLink = `${window.location.origin}/scan.html?hash=${currentDocHash}`;
+    if (!window.currentDocHash) return;
+    const verificationLink = `${window.location.origin}/scan.html?hash=${window.currentDocHash}`;
     const qrContainer = document.getElementById("qrcode");
     qrContainer.innerHTML = ""; 
     new QRCode(qrContainer, { text: verificationLink, width: 128, height: 128 });

@@ -1,151 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-  // --- 🔒 GATEKEEPER SCRIPT ---
-  (function checkAccess() {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("userRole");
-
-    // 1. Check if user is logged in
-    if (!token) {
-      alert("⚠️ You must log in to access this page.");
-      window.location.href = "index.html"; 
-      return;
-    }
-
-    // 2. Check if user is the CORRECT role
-    if (role !== "verifier") {
-      alert("⛔ Access Denied: Please login as a Verifier.");
-      window.location.href = "index.html"; 
-      return;
-    }
-  })();
-
-  function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userRole");
-    window.location.href = "index.html";
-  }
-</script>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
-  <script src="blockchain.js"></script>
-
   <meta charset="UTF-8">
-  <title>Public Verification | Document Registry</title>
+  <title>Verifier Dashboard</title>
+  
+  <script>
+    (function checkAccess() {
+      const token = localStorage.getItem("token");
+      // Uncomment lines below if you want to force login for verifiers too
+      // if (!token) { alert("⚠️ Login required."); window.location.href = "index.html"; return; }
+    })();
+    
+    function logout() { localStorage.clear(); window.location.href = "index.html"; }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+
   <style>
-    /* Same Classic CSS Styles */
-    body {
-      font-family: "Times New Roman", Times, serif;
-      background-color: #f4f1ea;
-      color: #333;
-      padding: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
+    /* SHARED THEME */
+    body { font-family: "Times New Roman", Times, serif; background-color: #f4f1ea; color: #333; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    
+    /* Header Style */
+    h2 { text-transform: uppercase; letter-spacing: 2px; border-bottom: 3px double #333; padding-bottom: 15px; margin-top: 50px; margin-bottom: 40px; }
+    
+    /* Main Card */
+    .box { background: #fff; padding: 30px; width: 450px; border: 1px solid #c0c0c0; box-shadow: 5px 10px 15px rgba(0,0,0,0.1); text-align: center; margin-bottom: 30px;}
+    
+    /* Inputs & Buttons */
+    button { background-color: #2c3e50; color: white; border: 1px solid #1a252f; padding: 10px 25px; cursor: pointer; margin-top: 15px; font-size: 1rem; }
+    button:hover { background-color: #1a252f; }
+    input[type="file"] { margin-bottom: 15px; padding: 10px; background: #fafafa; border: 1px solid #ccc; width: 90%; }
+    
+    /* Results Area */
+    #verifyResult { 
+      margin-top: 20px; 
+      padding: 15px; 
+      background: #f9f9f9; 
+      text-align: left; 
+      word-wrap: break-word;
+      min-height: 50px;
     }
-    h2 {
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      border-bottom: 3px double #333;
-      padding-bottom: 15px;
-      margin-bottom: 40px;
-      text-align: center;
-      color: #1a1a1a;
-    }
-    .box {
-      background: #fff;
-      padding: 30px;
-      margin-bottom: 30px;
-      width: 450px;
-      border: 1px solid #c0c0c0;
-      box-shadow: 
-        0 0 0 4px #f4f1ea,
-        0 0 0 5px #8b8b8b,
-        5px 10px 15px rgba(0,0,0,0.1);
-    }
-    h3 {
-      margin-top: 0;
-      font-size: 1.2rem;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
-      font-style: italic;
-      color: #444;
-    }
-    input[type="file"] {
-      font-family: "Times New Roman", serif;
-      margin-bottom: 15px;
-      padding: 10px;
-      background: #fafafa;
-      border: 1px solid #ccc;
-      width: 90%;
-    }
-    button {
-      background-color: #2c3e50;
-      color: white;
-      border: 1px solid #1a252f;
-      padding: 10px 25px;
-      cursor: pointer;
-      font-family: "Times New Roman", serif;
-      font-size: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: background 0.3s;
-      box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
-    }
-    button:hover {
-      background-color: #1a252f;
-      box-shadow: 1px 1px 0px rgba(0,0,0,0.2);
-    }
-    p {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #f9f9f9;
-      border-left: 3px solid #888;
-      font-size: 0.95rem;
-      word-break: break-all;
-      min-height: 20px;
-    }
+    
+    /* Menu Button */
+    .menu-btn { position: absolute; top: 20px; right: 20px; font-size: 1rem; background: #e74c3c; border: none; padding: 5px 15px; }
   </style>
 </head>
 <body>
-  <h2>🔍 Public Document Verification</h2>
+
+  <button class="menu-btn" onclick="logout()">Logout</button>
+
+  <h2>🔍 Document Verifier</h2>
   
   <div class="box">
-    <h3>II. Authenticity Verification</h3>
+    <h3>Check Authenticity</h3>
+    <p style="font-size: 0.9rem; color: #666;">Upload a file to check if it exists on the blockchain.</p>
+    
     <input type="file" id="verifyFile" />
-    <br><br>
-    <button onclick="logout()" style="background: #c0392b; margin-top: 20px;">Logout</button>
+    <br>
     <button onclick="verifyDocument()">Verify Document</button>
-    <p id="verifyResult">Waiting for input...</p>
+    
+    <div id="verifyResult">
+      Waiting for input...
+    </div>
   </div>
 
-
 <script>
+  // --- CONFIGURATION ---
   const API_URL = "http://localhost:5000/api";
+  const contractAddress = "0xEB024254d73D078A7719CAC39deD3B0E8D6C3Fc2"; //
   
+  const contractABI = [
+    { "inputs": [ { "internalType": "bytes32", "name": "_fileHash", "type": "bytes32" } ], "name": "getCid", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }
+  ];
+
+  // --- INTERNAL BLOCKCHAIN FUNCTION ---
+  // defined locally to avoid external file issues
+  async function verifyHashOnBlockchain(hash) {
+    if (!window.ethereum) {
+      alert("MetaMask is required to read from the blockchain.");
+      return false;
+    }
+
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      // Read-only connection is fine
+      const contract = new ethers.Contract(contractAddress, contractABI, provider);
+
+      if (!hash.startsWith("0x")) hash = "0x" + hash;
+
+      // Call smart contract
+      const cid = await contract.getCid(hash);
+      console.log("Found CID:", cid);
+      return cid; // Return the CID string if found
+
+    } catch (error) {
+      console.warn("Hash not found or error:", error);
+      return false; 
+    }
+  }
+
+  // --- MAIN VERIFY LOGIC ---
   async function verifyDocument() {
     const fileInput = document.getElementById("verifyFile");
     const resultText = document.getElementById("verifyResult");
 
+    // 1. Basic Validation
     if (!fileInput.files.length) {
       alert("Please select a file to verify");
       return;
     }
 
-    resultText.innerText = "⏳ Generating Hash...";
+    resultText.innerHTML = "⏳ Generating Hash...";
     resultText.style.color = "#2c3e50"; 
+    resultText.style.borderLeft = "3px solid #888";
 
+    // 2. Hash Generation (via Backend)
     const formData = new FormData();
     formData.append("document", fileInput.files[0]);
-
-    // --- 🔐 NEW: GET TOKEN FROM STORAGE ---
-    const token = localStorage.getItem("token");
+    
+    // Note: If you removed token check in backend for verification, remove the header below
+    const token = localStorage.getItem("token"); 
 
     try {
-      // --- 🔐 NEW: SEND TOKEN IN HEADERS ---
       const res = await fetch(`${API_URL}/upload`, {
         method: "POST",
         headers: {
@@ -154,36 +130,48 @@
         body: formData
       });
 
-      // Handle invalid token responses
       if (res.status === 401 || res.status === 403) {
-          alert("Session expired or invalid. Please login again.");
-          logout(); // Reuse your logout function
+          alert("Session expired. Please login again.");
+          logout();
           return;
       }
 
       const data = await res.json();
-      
-      const documentHash = data.hash;
+      const documentHash = data.hash; 
       console.log("Calculated Hash:", documentHash);
       
-      resultText.innerText = "⏳ Checking Registry...";
+      resultText.innerHTML = "⏳ Checking Blockchain Registry...";
       
-      // Calls function from blockchain.js
-      const isVerified = await verifyHashOnBlockchain(documentHash);
+      // 3. Verify on Blockchain 
+      const ipfsCid = await verifyHashOnBlockchain(documentHash);
 
-      if (isVerified) {
-        resultText.innerText = "✅ Verified: Document is Authentic.";
+      if (ipfsCid) {
+        // SUCCESS CASE
         resultText.style.color = "darkgreen";
-        resultText.style.borderLeft = "3px solid darkgreen";
+        resultText.style.borderLeft = "4px solid darkgreen";
+        resultText.style.backgroundColor = "#e8f5e9";
+        resultText.innerHTML = `
+            <h4 style="margin:0; margin-bottom:5px;">✅ Verified Authenticity!</h4>
+            <span style="font-size:0.9rem">The document hash matches our blockchain records.</span><br><br>
+            <strong>🔗 View Original:</strong> 
+            <a href="https://gateway.pinata.cloud/ipfs/${ipfsCid}" target="_blank" style="color: blue; text-decoration: underline;">
+                Open in IPFS
+            </a>
+        `;
       } else {
-        resultText.innerText = "❌ Failed: Document not found in Registry.";
-        resultText.style.color = "darkred";
-        resultText.style.borderLeft = "3px solid darkred";
+        // FAILURE CASE
+        resultText.style.color = "#c0392b";
+        resultText.style.borderLeft = "4px solid #c0392b";
+        resultText.style.backgroundColor = "#fadbd8";
+        resultText.innerHTML = `
+            <h4 style="margin:0; margin-bottom:5px;">❌ Verification Failed</h4>
+            <span style="font-size:0.9rem">This document hash was not found in the registry. It may be modified or fake.</span>
+        `;
       }
 
     } catch (error) {
       console.error(error);
-      resultText.innerText = "⚠️ Error during verification";
+      resultText.innerText = "⚠️ Error during verification. Check console.";
       resultText.style.color = "#8b4500";
     }
   }
