@@ -5,7 +5,8 @@
   // --- 🔒 GATEKEEPER SCRIPT ---
   (function checkAccess() {
     const token = localStorage.getItem("token");
-    // if (!token) { alert("⚠️ Login required."); window.location.href = "index.html"; return; }
+    // Uncomment next line to enforce login
+    //if (!token) { alert("⚠️ Login required."); window.location.href = "index.html"; return; }
   })();
   
   function logout() { localStorage.clear(); window.location.href = "index.html"; }
@@ -52,14 +53,70 @@
   
   <div class="box">
     <h3>Document Submission</h3>
-    <input type="file" id="uploadFile" />
-    <br>
-    <button onclick="uploadDocument()">Upload to IPFS & Blockchain</button>
+    
+    <input type="file" id="uploadFile" onchange="showDecisionGate()" />
+    
+    <div id="decisionGate" style="display:none; text-align: left; background: #fff8e1; padding: 15px; border-left: 5px solid #ffa000; margin: 20px 0;">
+      
+      <h4 style="margin-top:0; color: #d35400;">🤔 Smart Feature: Embed QR?</h4>
+      <p style="font-size: 0.9rem; color: #555;">
+        We can automatically place a <strong>Verification QR Code</strong> directly onto this document.
+      </p>
+
+      <div style="background: #fff; border: 1px solid #ddd; padding: 10px; font-size: 0.85rem; color: #444; margin-bottom: 15px;">
+        <strong>⚠️ CRITICAL DISCLAIMER:</strong><br>
+        If you choose <strong>"Yes"</strong>, the system will modify your file. 
+        The <strong>Modified File</strong> (with QR) will be the one recorded on the blockchain. 
+        <br><br>
+        <em>The original file on your computer will NOT verify against the blockchain record. You must use the new QR-stamped version.</em>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button onclick="handleDecision('no')" style="background: #95a5a6; border: none;">
+          No, Keep Original
+        </button>
+        <button onclick="handleDecision('yes')" style="background: #27ae60; border: none;">
+          Yes, Embed QR ✨
+        </button>
+      </div>
+    </div>
+
+    <div id="previewSection" style="display:none; text-align: center; border: 1px solid #ccc; padding: 15px; margin-top: 20px;">
+      
+      <h4>✨ Interactive Preview</h4>
+      <p id="aiMessage" style="font-size: 0.9rem; color: #555;">AI has suggested a spot.</p>
+      <p style="font-size: 0.8rem; color: #2980b9; font-weight: bold;">
+        🖱️ Drag the QR code to move it | 📏 Use slider to resize
+      </p>
+
+      <div style="margin: 10px 0;">
+          <label for="qrSizeSlider">QR Size:</label>
+          <input type="range" id="qrSizeSlider" min="50" max="300" value="150" oninput="updateQRSize(this.value)">
+      </div>
+
+      <canvas id="docCanvas" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); cursor: move;"></canvas>
+      
+      <br><br>
+      <p style="font-size: 0.8rem; color: red;">* This modified image will be hashed and registered.</p>
+      
+      <button onclick="confirmSmartQR()" style="background: #27ae60; color: white; padding: 10px 20px; border: none; cursor: pointer;">
+        ✅ Confirm & Upload
+      </button>
+      <button onclick="cancelSmartQR()" style="background: #c0392b; color: white; padding: 10px 20px; border: none; cursor: pointer;">
+        ❌ Cancel
+      </button>
+    </div>
+
+    <div id="uploadActions" style="display:none;">
+        <br>
+        <button onclick="uploadDocument()">🚀 Upload & Register</button>
+    </div>
+
     <p id="uploadResult" style="background:#f9f9f9; padding:10px; margin-top:10px;">Waiting for input...</p>
 
     <div id="qrSection">
       <h4>🎉 Verification Link Ready</h4>
-      <p>Do you want to generate a QR code for this document?</p>
+      <p>Do you want to generate a standalone QR code for this document?</p>
       <button onclick="generateQR()">Yes, Generate QR</button>
       <div id="qrcode"></div>
     </div>
@@ -84,9 +141,7 @@
 
 <script>
   // --- 1. CONFIGURATION ---
-  // Replace with your NEW Key that has 'unpin' permission
   const PINATA_JWT = CONFIG.PINATA_JWT;
-  
   const API_URL = CONFIG.API_URL;
   const contractAddress = CONFIG.CONTRACT_ADDRESS; 
   
@@ -95,7 +150,181 @@
     { "inputs": [ { "internalType": "bytes32", "name": "_fileHash", "type": "bytes32" }, { "internalType": "string", "name": "_ipfsCid", "type": "string" } ], "name": "registerDocument", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
   ];
 
-  // --- 2. INTERNAL BLOCKCHAIN FUNCTION ---
+  // --- SMART QR VARIABLES ---
+  let finalUploadBlob = null;
+  let useSmartQR = false;
+  let qrState = { x: 0, y: 0, size: 150, img: null, qrImg: null }; 
+  let isDragging = false;
+  let dragOffset = { x: 0, y: 0 };
+
+  // --- 2. UI LOGIC (DECISION GATE) ---
+  function showDecisionGate() {
+      const fileInput = document.getElementById("uploadFile");
+      const decisionGate = document.getElementById("decisionGate");
+      const uploadActions = document.getElementById("uploadActions");
+
+      // Reset
+      uploadActions.style.display = "none";
+      document.getElementById("qrSection").style.display = "none";
+      document.getElementById("previewSection").style.display = "none";
+      document.getElementById("uploadResult").innerText = "Waiting for decision...";
+      finalUploadBlob = null; // Clear previous blobs
+
+      if (fileInput.files.length > 0) {
+          decisionGate.style.display = "block";
+      } else {
+          decisionGate.style.display = "none";
+      }
+  }
+
+  function handleDecision(choice) {
+      document.getElementById("decisionGate").style.display = "none";
+      
+      if (choice === 'yes') {
+          processSmartQR(); // Trigger Interactive Studio
+      } else {
+          // Standard Mode
+          document.getElementById("uploadActions").style.display = "block";
+      }
+  }
+
+  // --- 3. INTERACTIVE QR STUDIO LOGIC ---
+  function processSmartQR() {
+      const fileInput = document.getElementById("uploadFile");
+      const file = fileInput.files[0];
+      
+      if (!file || !file.type.startsWith("image/")) {
+          alert("⚠️ Please upload a JPG or PNG image to use the Smart QR feature. For PDFs, please use 'No'.");
+          document.getElementById("decisionGate").style.display = "block";
+          return;
+      }
+
+      document.getElementById("previewSection").style.display = "block";
+      document.getElementById("aiMessage").innerText = "🤖 Analyzing document...";
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+              qrState.img = img; // Save original image
+              initInteractiveCanvas(img);
+          };
+          img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+  }
+
+  function initInteractiveCanvas(img) {
+      const canvas = document.getElementById("docCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Set Canvas Size
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // Generate Temp QR (Hidden)
+      const tempQRDiv = document.getElementById("qrcode");
+      tempQRDiv.innerHTML = "";
+      
+      // Construct Future Link
+      const futureLink = window.location.href.replace('issuer.html', 'scan.html') + "?check=secure";
+      new QRCode(tempQRDiv, { text: futureLink, width: 256, height: 256 });
+
+      // Wait for QR to render, then start interaction
+      setTimeout(() => {
+          const qrSrc = tempQRDiv.querySelector("img").src;
+          const qrImg = new Image();
+          qrImg.onload = function() {
+              qrState.qrImg = qrImg;
+              
+              // Initial Position (Bottom Right Default)
+              qrState.size = 150; 
+              qrState.x = canvas.width - qrState.size - 50;
+              qrState.y = canvas.height - qrState.size - 50;
+              
+              document.getElementById("aiMessage").innerText = "✅ Ready! Drag to move | Use slider to resize.";
+              
+              // Start Loop
+              drawCanvas();
+              addCanvasListeners(canvas);
+          };
+          qrImg.src = qrSrc;
+      }, 300);
+  }
+
+  function drawCanvas() {
+      const canvas = document.getElementById("docCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // 1. Clear & Draw Doc
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(qrState.img, 0, 0);
+
+      // 2. Draw White Background for QR
+      ctx.fillStyle = "white";
+      ctx.fillRect(qrState.x - 5, qrState.y - 5, qrState.size + 10, qrState.size + 10);
+
+      // 3. Draw QR Code
+      ctx.drawImage(qrState.qrImg, qrState.x, qrState.y, qrState.size, qrState.size);
+  }
+
+  function updateQRSize(val) {
+      qrState.size = parseInt(val);
+      drawCanvas();
+  }
+
+  function addCanvasListeners(canvas) {
+      canvas.onmousedown = function(e) {
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+          const mouseX = (e.clientX - rect.left) * scaleX;
+          const mouseY = (e.clientY - rect.top) * scaleY;
+
+          if (mouseX >= qrState.x && mouseX <= qrState.x + qrState.size &&
+              mouseY >= qrState.y && mouseY <= qrState.y + qrState.size) {
+              isDragging = true;
+              dragOffset.x = mouseX - qrState.x;
+              dragOffset.y = mouseY - qrState.y;
+          }
+      };
+
+      canvas.onmousemove = function(e) {
+          if (isDragging) {
+              const rect = canvas.getBoundingClientRect();
+              const scaleX = canvas.width / rect.width;
+              const scaleY = canvas.height / rect.height;
+              const mouseX = (e.clientX - rect.left) * scaleX;
+              const mouseY = (e.clientY - rect.top) * scaleY;
+
+              qrState.x = mouseX - dragOffset.x;
+              qrState.y = mouseY - dragOffset.y;
+              drawCanvas();
+          }
+      };
+
+      canvas.onmouseup = function() { isDragging = false; };
+      canvas.onmouseleave = function() { isDragging = false; };
+  }
+
+  function confirmSmartQR() {
+      const canvas = document.getElementById("docCanvas");
+      // Convert Canvas to Blob
+      canvas.toBlob(function(blob) {
+          finalUploadBlob = blob;
+          document.getElementById("previewSection").style.display = "none";
+          document.getElementById("uploadActions").style.display = "block";
+          document.getElementById("uploadResult").innerText = "✅ Modified file ready. Click Upload to finish.";
+      }, 'image/jpeg', 0.95);
+  }
+
+  function cancelSmartQR() {
+      document.getElementById("previewSection").style.display = "none";
+      document.getElementById("decisionGate").style.display = "block";
+      finalUploadBlob = null;
+  }
+
+  // --- 4. INTERNAL BLOCKCHAIN FUNCTION ---
   async function registerDocumentOnBlockchain(hash, cid) {
     console.log("Starting blockchain registration...");
     if (!window.ethereum) throw new Error("MetaMask is not installed!");
@@ -113,33 +342,32 @@
     console.log("Tx Confirmed");
   }
 
-  // --- 3. UNPIN HELPER (Calls your Backend) ---
+  // --- 5. UNPIN HELPER ---
   async function unpinFromPinata(cid) {
-      console.log(`🗑️ Rolling back: Requesting server to delete ${cid}...`);
+      console.log(`🗑️ Rolling back: ${cid}...`);
       try {
           await fetch(`${API_URL}/unpin`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ cid: cid, pinataJWT: PINATA_JWT })
+              body: JSON.stringify({ cid: cid }) 
           });
-          console.log("✅ Rollback successful. File deleted from IPFS via Server.");
-      } catch (e) {
-          console.error("⚠️ Failed to rollback IPFS upload:", e);
-      }
+      } catch (e) { console.error("Rollback failed:", e); }
   }
 
-  // --- 4. UPLOAD LOGIC ---
+  // --- 6. UPLOAD LOGIC ---
   async function uploadDocument() {
     const fileInput = document.getElementById("uploadFile");
     const resultText = document.getElementById("uploadResult");
-    const file = fileInput.files[0];
+    
+    // IMPORTANT: Check if we have a Smart Blob, otherwise use Input File
+    const fileToUpload = finalUploadBlob ? finalUploadBlob : fileInput.files[0];
     let uploadedCid = null; 
 
-    if (!file) { alert("Please select a file"); return; }
+    if (!fileToUpload) { alert("Please select a file"); return; }
     
     resultText.innerText = "⏳ Step 1: Hashing File (Server)...";
     const formData = new FormData();
-    formData.append("document", file);
+    formData.append("document", fileToUpload); // Use the correct file source
     const token = localStorage.getItem("token");
 
     try {
@@ -157,7 +385,12 @@
       // B. Upload to IPFS
       resultText.innerText = "⏳ Step 2: Uploading to IPFS...";
       const pinataData = new FormData();
-      pinataData.append('file', file);
+      // If blob, we should give it a name, otherwise Pinata might complain
+      if (finalUploadBlob) {
+        pinataData.append('file', fileToUpload, "smart-qr-doc.jpg");
+      } else {
+        pinataData.append('file', fileToUpload);
+      }
       
       const pinRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
           method: "POST",
@@ -169,36 +402,39 @@
       console.log("IPFS CID:", uploadedCid);
 
       // C. Register on Blockchain
-      resultText.innerText = `⏳ Step 3: Waiting for MetaMask Confirmation...`;
+      resultText.innerText = `⏳ Step 3: Waiting for MetaMask...`;
       await registerDocumentOnBlockchain(docHash, uploadedCid);
       
       resultText.innerText = `✅ Success! \nHash: ${docHash} \nCID: ${uploadedCid}`;
       window.currentDocHash = docHash; 
-      document.getElementById("qrSection").style.display = "block";
+      
+      // If we made a Smart QR, we don't need the standalone generator
+      if (!useSmartQR) {
+        document.getElementById("qrSection").style.display = "block";
+      } else {
+        document.getElementById("qrSection").style.display = "none";
+      }
 
     } catch (err) {
       console.error(err);
       const errorMessage = err.reason || err.message || JSON.stringify(err);
 
-      // Smart Rollback Logic
       if (errorMessage.includes("already registered")) {
           resultText.innerText = "⚠️ Document is already registered on the Blockchain!";
           resultText.style.color = "orange";
       } else if (uploadedCid) {
-          resultText.innerText = "❌ Transaction Failed/Cancelled. Cleaning up IPFS...";
+          resultText.innerText = "❌ Transaction Failed. Cleaning up IPFS...";
           await unpinFromPinata(uploadedCid); 
-          resultText.innerText = "❌ Transaction Cancelled. Orphan file removed.";
       } else {
           resultText.innerText = "❌ Error: " + errorMessage;
       }
     }
   }
 
-  // --- 5. HISTORY LOGIC ---
- // --- 5. ROBUST HISTORY LOGIC (Chunking) ---
+  // --- 7. HISTORY LOGIC ---
   async function loadHistory() {
     const tableBody = document.querySelector("#historyTable tbody");
-    tableBody.innerHTML = "<tr><td colspan='3'>Scanning blockchain (this may take a moment)...</td></tr>";
+    tableBody.innerHTML = "<tr><td colspan='3'>Scanning blockchain...</td></tr>";
 
     if (!window.ethereum) return alert("MetaMask required");
     
@@ -208,12 +444,7 @@
       const userAddress = await signer.getAddress();
       const contract = new ethers.Contract(contractAddress, contractABI, provider);
 
-      // 1. Get Current Block
       const currentBlock = await provider.getBlockNumber();
-      
-      // 2. Define Scanning Range 
-      // We scan the last 100,000 blocks in batches of 40,000 to avoid errors.
-      // You can increase 'TOTAL_BLOCKS_TO_SCAN' if you need older history.
       const CHUNK_SIZE = 40000; 
       const TOTAL_BLOCKS_TO_SCAN = 200000; 
       
@@ -221,38 +452,29 @@
       if (startBlock < 0) startBlock = 0;
 
       let allEvents = [];
-      
-      console.log(`Scanning from ${startBlock} to ${currentBlock} in chunks...`);
+      console.log(`Scanning from ${startBlock} to ${currentBlock}...`);
 
-      // 3. Batch Request Loop
       for (let i = startBlock; i < currentBlock; i += CHUNK_SIZE) {
           const from = i;
           const to = Math.min(i + CHUNK_SIZE - 1, currentBlock);
-          
           try {
             const events = await contract.queryFilter("DocumentRegistered", from, to);
             allEvents.push(...events);
-          } catch (err) {
-            console.warn(`Skipping chunk ${from}-${to} due to error or no events.`);
-          }
+          } catch (err) { console.warn("Skipping chunk"); }
       }
 
-      // 4. Filter by YOUR address (Case insensitive)
       const myEvents = allEvents.filter(e => e.args[2].toLowerCase() === userAddress.toLowerCase());
 
       tableBody.innerHTML = "";
       if (myEvents.length === 0) {
-         tableBody.innerHTML = "<tr><td colspan='3'>No documents found in recent history.</td></tr>";
+         tableBody.innerHTML = "<tr><td colspan='3'>No recent documents found.</td></tr>";
          return;
       }
 
-      // 5. Display Results (Newest first)
       myEvents.reverse().forEach(e => {
          const hash = e.args[0];
          const cid = e.args[1];
-         // Create short hash (0x123...abc)
          const shortHash = hash.substring(0, 10) + "..." + hash.substring(60);
-         
          const scanLink = window.location.href.replace('issuer.html', 'scan.html') + `?hash=${hash}`;
          
          const row = `
@@ -271,26 +493,15 @@
     }
   }
 
-  // --- QR CODE FUNCTION ---
+  // --- 8. QR CODE GENERATOR (Legacy) ---
   function generateQR() {
-    if (!window.currentDocHash) {
-        alert("Please upload a document first!");
-        return;
-    }
+    if (!window.currentDocHash) return alert("Upload first!");
     
-    // Construct the link: Replaces 'issuer.html' with 'scan.html' and adds the hash
     const verificationLink = window.location.href.replace('issuer.html', 'scan.html') + `?hash=${window.currentDocHash}`;
-    
-    // Clear previous QR code
     const qrContainer = document.getElementById("qrcode");
     qrContainer.innerHTML = ""; 
     
-    // Generate new QR
-    new QRCode(qrContainer, { 
-        text: verificationLink, 
-        width: 128, 
-        height: 128 
-    });
+    new QRCode(qrContainer, { text: verificationLink, width: 128, height: 128 });
   }
 </script>
 </body>
