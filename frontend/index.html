@@ -2,143 +2,741 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Immutable Registry | Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuthenChain | Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700&display=swap" rel="stylesheet">
   <style>
-    /* SHARED CLASSIC THEME */
-    body {
-      font-family: "Times New Roman", Times, serif;
-      background-color: #f4f1ea;
-      color: #333;
+    * {
       margin: 0;
       padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      box-sizing: border-box;
+    }
+    /* DROPDOWN MENU STYLES */
+   /* DROPDOWN MENU STYLES */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+      /* Ensures the menu aligns correctly */
+      height: 100%; 
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0; 
+      background-color: #ededed; 
+      min-width: 160px;
+      border: 1px solid #dcdcdc;
+      box-shadow: 0px 10px 25px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      z-index: 1000;
+      top: 100%;
+      margin-top: 10px; /* The visual gap */
+    }
+
+    /* THE FIX: Invisible Bridge */
+    /* This creates a transparent block that fills the gap */
+    .dropdown-content::before {
+      content: "";
+      position: absolute;
+      top: -15px; /* Reaches up to touch the button */
+      left: 0;
+      width: 100%;
+      height: 20px; /* Height of the gap + extra buffer */
+      background: transparent; 
+    }
+
+    .dropdown-content a {
+      color: #030303;
+      padding: 12px 20px;
+      text-decoration: none;
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      border-bottom: 1px solid #e0e0e0; 
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .dropdown-content a:last-child {
+      border-bottom: none;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #e0e0e0; 
+      color: #4169ff;
+      padding-left: 25px; 
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background-color: #ededed;
+      color: #030303;
+      margin: 0;
+      padding: 0;
       min-height: 100vh;
     }
 
+    /* NAVIGATION */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 80px;
+      background-color: #ededed;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      font-family: 'Poppins', sans-serif;
+      font-size: 28px;
+      font-weight: bold;
+      color: #030303;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 35px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #030303;
+      font-size: 16px;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: #4169ff;
+    }
+
+    .nav-links a:first-child {
+      color: #030303;
+      
+    }
+    .nav-links a:first-child:hover {
+  color: #4169FF; 
+}
+
+    .auth-buttons {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .btn-login {
+      background: transparent;
+      border: none;
+      color: #030303;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 8px 16px;
+    }
+
+    .btn-signup {
+      background: #4169ff;
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btn-signup:hover {
+      background: #3052cc;
+    }
+
     /* HERO SECTION */
-    header {
-      text-align: center;
-      padding: 60px 20px;
-      max-width: 800px;
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 80px 80px 60px 80px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hero-content {
+      flex: 1;
+      max-width: 600px;
     }
 
     h1 {
-      font-size: 3rem;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      margin-bottom: 10px;
-      border-bottom: 3px double #333;
-      display: inline-block;
-      padding-bottom: 15px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 4.5rem;
+      font-weight: 600;
+      line-height: 80px;
+      margin-bottom: 30px;
+      color: #030303;
     }
 
     .subtitle {
-      font-style: italic;
-      font-size: 1.2rem;
-      color: #555;
-      margin-top: 10px;
+      font-size: 1.15rem;
+      color: #030303;
+      line-height: 1.6;
+      margin-bottom: 40px;
+      font-weight: normal;
     }
 
-    /* FEATURES GRID */
-    .container {
+    .hero-buttons {
+      display: flex;
+      gap: 20px;
+    }
+
+    .btn {
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: #4169ff;
+      color: white;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background: #3052cc;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: #ededed;
+      color: #030303;
+      border: 2px solid #030303;
+    }
+
+    .btn-secondary:hover {
+      border-color: #4169ff;
+      color: #4169ff;
+    }
+
+    /* HERO ILLUSTRATION */
+    .hero-illustration {
+      flex: 1;
       display: flex;
       justify-content: center;
-      gap: 30px;
-      padding: 20px;
-      flex-wrap: wrap;
+      align-items: center;
+      position: relative;
+      transform: translateY(-70px); 
+      min-height: 500px;
+      
     }
 
-    .card {
-      background: #fff;
-      padding: 30px;
-      width: 300px;
-      border: 1px solid #c0c0c0;
-      /* Classic "Paper" styling */
-      box-shadow: 
-        0 0 0 4px #f4f1ea,
-        0 0 0 5px #8b8b8b,
-        5px 10px 15px rgba(0,0,0,0.1);
-      text-align: center;
-      transition: transform 0.3s;
+    .illustration-container {
+      position: relative;
+      width: 100%;
+      max-width: 700px;
+      height: 500px;
     }
 
-    .card:hover {
-      transform: translateY(-5px);
+    /* Hidden container for role selection */
+    .container {
+      display: none;
     }
 
-    .icon {
-      font-size: 3rem;
-      margin-bottom: 15px;
-      display: block;
+    @media (max-width: 1024px) {
+      nav {
+        padding: 20px 40px;
+      }
+
+      .hero {
+        flex-direction: column;
+        padding: 60px 40px;
+      }
+
+      h1 {
+        font-size: 3.5rem;
+      }
+
+      .hero-illustration {
+        margin-top: 60px;
+        
+        
+      }
     }
 
-    h3 {
-      text-transform: uppercase;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 10px;
-      margin-bottom: 15px;
+    @media (max-width: 768px) {
+      nav {
+        padding: 20px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        padding: 40px 20px;
+        
+      }
+
+      h1 {
+        font-size: 2.8rem;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .btn {
+        width: 100%;
+        text-align: center;
+      }
     }
 
-    p {
-      line-height: 1.6;
-      font-size: 0.95rem;
-      color: #444;
-    }
+    html {
+  scroll-behavior: smooth;
+}
 
-    /* BUTTONS */
-    .btn {
-      display: inline-block;
-      margin-top: 20px;
-      text-decoration: none;
-      background-color: #fbfbfb;
-      color: #1a252f;
-      border: 1px solid #1a252f;
-      padding: 10px 25px;
-      font-family: "Times New Roman", serif;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      cursor: pointer;
-    }
-
-    .btn:hover {
-      background-color: #1a252f;
-    }
-
-    .btn-outline {
-      background-color: transparent;
-      color: #2c3e50;
-      border: 2px solid #2c3e50;
-    }
-    
-    .btn-outline:hover {
-      background-color: #2c3e50;
-      color: #fff;
-    }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>The Immutable Registry</h1>
-    <div class="subtitle">Secure, Decentralized Document Verification on the Blockchain</div>
-  </header>
+  <!-- NAVIGATION -->
+  <nav>
+    <div class="logo">AuthenChain</div>
+    <div class="nav-links">
+      <a href="#why">Why? AuthenChain</a>
+      <a href="#demo">Demo</a>
+      <a href="#how-it-works">How it Works</a>
+      <a href="#about">About us</a>
+    </div>
+    <div class="auth-buttons">
+      
+      <div class="dropdown">
+        <button class="btn-login">Log in ▾</button>
+        <div class="dropdown-content">
+          <a href="login.html?role=issuer">Document Issuer</a>
+          <a href="login.html?role=verifier">Verifier</a>
+        </div>
+      </div>
 
+      <div class="dropdown">
+        <button class="btn-signup">Sign up ▾</button>
+        <div class="dropdown-content">
+          <a href="signup.html?role=issuer">Issuer Registry</a>
+          <a href="signup.html?role=verifier">Verifier Registry</a>
+        </div>
+      </div>
+    </div>
+  </nav>
 
-  <div class="container">
-    <div class="card" style="background-color: #fcfcfc;">
-      <h3>For Authorities</h3>
-      <p>Are you an institution issuing certificates, degrees, or legal papers?</p>
-      <a href="auth.html?role=issuer" class="btn btn-outline">Login as Issuer</a>
+  <!-- HERO SECTION -->
+  <div class="hero">
+    <div class="hero-content">
+      <h1>Where trust in Documents is guaranteed by blockchain.</h1>
+      <p class="subtitle">A secure blockchain and IPFS based platform to verify documents instantly.</p>
+      <div class="hero-buttons">
+        <a href="auth.html?role=verifier" class="btn btn-primary">Connect</a>
+        <a href="https://docs.ipfs.tech/concepts/what-is-ipfs/#defining-ipfs" class="btn btn-secondary"  target="_blank" 
+  rel="noopener noreferrer">Know IPFS</a>
+      </div>
     </div>
 
-    <div class="card" style="background-color: #fcfcfc;">
+    <div class="hero-illustration">
+      <div class="illustration-container">
+        <img src="DALL-E.png" alt="Blockchain Document Verification" style="width: 120%; height: 105%; object-fit: contain;">
+          <!-- Central large cylinder -->
+          <defs>
+            <linearGradient id="cylGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#5eb3d6;stop-opacity:0.9" />
+              <stop offset="100%" style="stop-color:#3a8fb0;stop-opacity:1" />
+            </linearGradient>
+            <radialGradient id="glowGrad">
+              <stop offset="0%" style="stop-color:#4dd4ff;stop-opacity:0.8" />
+              <stop offset="100%" style="stop-color:#4dd4ff;stop-opacity:0" />
+            </radialGradient>
+          </defs>
+
+          <!-- Background network lines -->
+          <g opacity="0.3">
+            <line x1="150" y1="280" x2="350" y2="250" stroke="#999" stroke-width="1" stroke-dasharray="4,4"/>
+            <line x1="550" y1="280" x2="350" y2="250" stroke="#999" stroke-width="1" stroke-dasharray="4,4"/>
+            <line x1="200" y1="150" x2="350" y2="250" stroke="#999" stroke-width="1" stroke-dasharray="4,4"/>
+            <line x1="500" y1="150" x2="350" y2="250" stroke="#999" stroke-width="1" stroke-dasharray="4,4"/>
+          </g>
+
+          <!-- Central platform with glow -->
+          <ellipse cx="350" cy="330" rx="140" ry="25" fill="url(#glowGrad)" opacity="0.6"/>
+          <ellipse cx="350" cy="320" rx="120" ry="20" fill="#2a5f7a" opacity="0.8"/>
+          <ellipse cx="350" cy="320" rx="110" ry="18" fill="#3a7a9a"/>
+          
+          <!-- Central cylinder -->
+          <rect x="310" y="200" width="80" height="120" fill="url(#cylGrad)" opacity="0.8"/>
+          <ellipse cx="350" cy="200" rx="40" ry="12" fill="#6bc5e8"/>
+          <ellipse cx="350" cy="320" rx="40" ry="12" fill="#3a8fb0"/>
+
+          <!-- Central lock icon on cylinder -->
+          <g transform="translate(335, 245)">
+            <rect x="5" y="12" width="20" height="15" rx="2" fill="#4dd4ff" opacity="0.9"/>
+            <path d="M 10 12 L 10 8 A 5 5 0 0 1 20 8 L 20 12" stroke="#4dd4ff" stroke-width="3" fill="none"/>
+            <circle cx="15" cy="20" r="2" fill="#fff"/>
+          </g>
+
+          <!-- Small platforms around -->
+          <!-- Left front platform -->
+          <ellipse cx="150" cy="310" rx="35" ry="8" fill="#2a5f7a" opacity="0.7"/>
+          <ellipse cx="150" cy="300" rx="30" ry="7" fill="#3a7a9a"/>
+          <g transform="translate(135, 270)">
+            <rect x="8" y="0" width="14" height="30" fill="#5eb3d6" opacity="0.7"/>
+            <ellipse cx="15" cy="0" rx="7" ry="4" fill="#6bc5e8"/>
+            <circle cx="15" cy="10" r="5" fill="#50c878" opacity="0.8"/>
+          </g>
+
+          <!-- Right front platform -->
+          <ellipse cx="550" cy="310" rx="35" ry="8" fill="#2a5f7a" opacity="0.7"/>
+          <ellipse cx="550" cy="300" rx="30" ry="7" fill="#3a7a9a"/>
+          <g transform="translate(535, 265)">
+            <rect x="8" y="0" width="14" height="35" fill="#5eb3d6" opacity="0.7"/>
+            <ellipse cx="15" cy="0" rx="7" ry="4" fill="#6bc5e8"/>
+            <rect x="10" y="8" width="10" height="12" fill="#4dd4ff" opacity="0.8"/>
+          </g>
+
+          <!-- Left back platform -->
+          <ellipse cx="200" cy="180" rx="28" ry="7" fill="#2a5f7a" opacity="0.6"/>
+          <ellipse cx="200" cy="173" rx="25" ry="6" fill="#3a7a9a"/>
+          <g transform="translate(188, 150)">
+            <rect x="7" y="0" width="10" height="23" fill="#5eb3d6" opacity="0.6"/>
+            <ellipse cx="12" cy="0" rx="5" ry="3" fill="#6bc5e8"/>
+            <path d="M 7 10 L 12 5 L 17 10" stroke="#4dd4ff" stroke-width="2" fill="none"/>
+          </g>
+
+          <!-- Right back platform -->
+          <ellipse cx="500" cy="180" rx="28" ry="7" fill="#2a5f7a" opacity="0.6"/>
+          <ellipse cx="500" cy="173" rx="25" ry="6" fill="#3a7a9a"/>
+          <g transform="translate(488, 145)">
+            <rect x="7" y="0" width="10" height="28" fill="#5eb3d6" opacity="0.6"/>
+            <ellipse cx="12" cy="0" rx="5" ry="3" fill="#6bc5e8"/>
+            <circle cx="12" cy="12" r="6" fill="#50c878" opacity="0.7"/>
+          </g>
+
+          <!-- Floating document icons -->
+          <g transform="translate(250, 130)">
+            <rect width="22" height="28" rx="2" fill="#5eb3d6" opacity="0.7"/>
+            <rect x="3" y="4" width="16" height="2" fill="#4dd4ff"/>
+            <rect x="3" y="9" width="12" height="2" fill="#4dd4ff"/>
+            <rect x="3" y="14" width="16" height="2" fill="#4dd4ff"/>
+          </g>
+
+          <g transform="translate(620, 200)">
+            <rect width="20" height="25" rx="2" fill="#5eb3d6" opacity="0.7"/>
+            <rect x="3" y="4" width="14" height="2" fill="#4dd4ff"/>
+            <rect x="3" y="9" width="10" height="2" fill="#4dd4ff"/>
+          </g>
+
+          <g transform="translate(80, 220)">
+            <rect width="18" height="23" rx="2" fill="#5eb3d6" opacity="0.6"/>
+            <circle cx="9" cy="12" r="5" fill="#50c878" opacity="0.8"/>
+          </g>
+
+          <!-- Shield icons -->
+          <g transform="translate(430, 100)">
+            <path d="M 0 0 L 6 0 L 6 8 L 3 10 L 0 8 Z" fill="#50c878" opacity="0.8"/>
+            <path d="M 1.5 4 L 2.5 5 L 4.5 3" stroke="#fff" stroke-width="0.8" fill="none"/>
+          </g>
+
+          <g transform="translate(170, 350)">
+            <path d="M 0 0 L 5 0 L 5 7 L 2.5 9 L 0 7 Z" fill="#50c878" opacity="0.7"/>
+          </g>
+
+          <!-- Small connecting nodes -->
+          <circle cx="280" cy="240" r="4" fill="#4dd4ff" opacity="0.6"/>
+          <circle cx="420" cy="240" r="4" fill="#4dd4ff" opacity="0.6"/>
+          <circle cx="230" cy="200" r="3" fill="#50c878" opacity="0.6"/>
+          <circle cx="470" cy="200" r="3" fill="#50c878" opacity="0.6"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden original functionality preserved -->
+  <div class="container">
+    <div style="background-color: #fcfcfc;">
+      <h3>For Authorities</h3>
+      <p>Are you an institution issuing certificates, degrees, or legal papers?</p>
+      <a href="auth.html?role=issuer">Login as Issuer</a>
+    </div>
+
+    <div style="background-color: #fcfcfc;">
       <h3>For Public</h3>
       <p>Do you need to check if a document is authentic and unmodified?</p>
-      <a href="auth.html?role=verifier" class="btn btn-outline">Login as Verifier</a>
+      <a href="auth.html?role=verifier">Login as Verifier</a>
     </div>
   </div>
 
 </body>
 </html>
+
+<!-- WHY AUTHENCHAIN SECTION -->
+ 
+  <section id="why" style="padding: 80px 80px; max-width: 1400px; margin: 0 auto;">
+    <h2 style="font-family: 'Poppins', sans-serif; font-size: 3rem; font-weight: 600; text-align: center; margin-bottom: 60px; color: #030303;">Why AuthenChain?</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 50px;">
+      <!-- Card 1 -->
+      <div style="text-align: center;">
+        <img src="Blockchain.png" alt="Blockchain Security" style="width: 100%; max-width: 350px; height: auto; margin-bottom: 25px;">
+        <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 15px; color: #030303;">Immutable Security</h3>
+        <p style="font-size: 1rem; line-height: 1.6; color: #030303;">Documents stored on blockchain cannot be altered or tampered with, ensuring permanent verification and trust.</p>
+      </div>
+      
+      <!-- Card 2 -->
+      <div style="text-align: center;">
+        <img src="IPFS.png" alt="IPFS Network" style="width: 100%; max-width: 350px; height: auto; margin-bottom: 25px;">
+        <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 15px; color: #030303;">Decentralized Storage</h3>
+        <p style="font-size: 1rem; line-height: 1.6; color: #030303;">IPFS ensures your documents are distributed across multiple nodes, eliminating single points of failure.</p>
+      </div>
+      
+      <!-- Card 3 -->
+      <div style="text-align: center;">
+        <img src="QR-Code.png" alt="Instant QR Verification" style="width: 100%; max-width: 350px; height: auto; margin-bottom: 25px;">
+        <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 15px; color: #030303;">Instant Verification</h3>
+        <p style="font-size: 1rem; line-height: 1.6; color: #030303;">Verify document authenticity in seconds using QR codes or document hashes, accessible from anywhere.</p>
+      </div>
+    </div>
+  </section>
+  
+
+
+<section id="demo" style="padding: 80px 80px; max-width: 1400px; margin: 0 auto; text-align: center;">
+    <h2 style="font-family: 'Poppins', sans-serif; font-size: 3rem; font-weight: 600; margin-bottom: 60px; color: #030303;">See It in Action</h2>
+    
+    <div style="max-width: 900px; margin: 0 auto; position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.15); background-color: #000;">
+   <iframe 
+        width="100%" 
+        height="500" 
+        src="https://www.youtube.com/embed/5Uj6uR3fp-U" 
+        title="IPFS: Interplanetary file storage!" 
+        frameborder="30" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+      </iframe>
+      </div>
+  </section>
+
+  <!-- HOW IT WORKS SECTION -->
+<section id="how-it-works">
+  <h2>How It Works</h2>
+
+  <div class="zigzag">
+
+    <!-- STEP 1 -->
+    <div class="step">
+      <img src="step1.png" alt="Upload Document">
+      <div class="text">
+        <h3>Upload Document</h3>
+        <p>Upload your document securely to AuthenChain in just one step.
+            Supported formats are processed instantly with end-to-end integrity protection.</p>
+      </div>
+    </div>
+
+    <div class="arrow down"></div>
+
+    <!-- STEP 2 -->
+    <div class="step reverse">
+      <img src="step2.png" alt="Hash and Store">
+      <div class="text">
+        <h3>Hash & Store</h3>
+        <p>The document hash is securely recorded on the blockchain while the actual file is stored on IPFS.
+           This separation ensures tamper-proof verification without exposing sensitive data.</p>
+      </div>
+    </div>
+
+    <div class="arrow down"></div>
+
+    <!-- STEP 3 -->
+    <div class="step">
+      <img src="step3.png" alt="Issue Verification">
+      <div class="text">
+        <h3>Issue Verification</h3>
+        <<p>A unique QR code or cryptographic hash is generated for the document.
+            This acts as a permanent digital proof that can be shared or embedded anywhere.</p>
+
+      </div>
+    </div>
+
+    <div class="arrow down"></div>
+
+    <!-- STEP 4 -->
+    <div class="step reverse">
+      <img src="step4.png" alt="Verify Anytime">
+      <div class="text">
+        <h3>Verify Anytime</h3>
+        <p>Anyone can instantly verify the document by scanning the QR code or checking the hash.
+          The system confirms authenticity in seconds without requiring registration or login.</p>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+/* SECTION */
+#how-it-works {
+  padding: 70px 80px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+#how-it-works h2 {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 80px;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ZIGZAG */
+.zigzag {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 0.8s ease;
+}
+
+.step.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.step.reverse {
+  flex-direction: row-reverse;
+}
+
+.step img {
+  width: 45%;
+  max-width: 420px;
+}
+
+.step .text {
+  width: 50%;
+}
+
+.step h3 {
+  font-size: 1.8rem;
+  margin-bottom: 12px;
+}
+
+.step p {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #333;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .step,
+  .step.reverse {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .step img,
+  .step .text {
+    width: 100%;
+  }
+
+  .arrow {
+    transform: rotate(45deg);
+  }
+    html {
+  scroll-behavior: smooth;
+}
+  }
+
+</style>
+
+<script>
+  const steps = document.querySelectorAll(".step");
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Add class when visible (plays animation)
+        entry.target.classList.add("show");
+      } else {
+        // Remove class when out of view (resets animation)
+        entry.target.classList.remove("show");
+      }
+    });
+  }, { threshold: 0.3 }); // 0.3 means it triggers when 30% of the item is visible
+
+  steps.forEach(step => observer.observe(step));
+</script>
+
+
+<style>
+  footer a:hover {
+    color: #4169ff !important;
+    padding-left: 5px;
+  }
+</style>
+
+<footer id="about" style="background-color: #030303; color: #ffffff; padding: 80px 80px 40px; margin-top: 100px;">
+  <div style="max-width: 1400px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 40px;">
+
+    <div style="flex: 1; min-width: 300px;">
+      <h3 style="font-family: 'Poppins', sans-serif; font-size: 26px; margin-bottom: 20px; color: #fff;">AuthenChain</h3>
+      <p style="font-family: 'Inter', sans-serif; line-height: 1.6; color: #cccccc; max-width: 400px; font-size: 0.95rem;">
+        AuthenChain is a decentralized platform dedicated to eliminating document fraud. By leveraging 
+        <strong>Blockchain security</strong> and <strong>IPFS storage</strong>, we ensure that every certificate 
+        and legal document is immutable, transparent, and instantly verifiable.
+      </p>
+    </div>
+
+    <div style="flex: 1; min-width: 200px;">
+      <h4 style="font-family: 'Poppins', sans-serif; margin-bottom: 20px; color: #fff;">Quick Links</h4>
+      <ul style="list-style: none; padding: 0;">
+        <li style="margin-bottom: 12px;"><a href="#" style="color: #cccccc; text-decoration: none; transition: all 0.3s ease;">Back to Top</a></li>
+        <li style="margin-bottom: 12px;"><a href="#why" style="color: #cccccc; text-decoration: none; transition: all 0.3s ease;">Why AuthenChain</a></li>
+        <li style="margin-bottom: 12px;"><a href="#how-it-works" style="color: #cccccc; text-decoration: none; transition: all 0.3s ease;">How it Works</a></li>
+        <li style="margin-bottom: 12px;"><a href="auth.html?role=issuer" style="color: #cccccc; text-decoration: none; transition: all 0.3s ease;">Issuer Login</a></li>
+      </ul>
+    </div>
+
+    <div style="flex: 1; min-width: 200px;">
+      <h4 style="font-family: 'Poppins', sans-serif; margin-bottom: 20px; color: #fff;">Connect</h4>
+      <p style="color: #cccccc; margin-bottom: 10px;">support@authenchain.com</p>
+      <p style="color: #cccccc; margin-bottom: 20px;">+1 (555) 123-4567</p>
+      
+      <div style="display: flex; gap: 15px; margin-top: 20px;">
+         <div style="width: 40px; height: 40px; background: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;">X</div>
+         <div style="width: 40px; height: 40px; background: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;">in</div>
+         <div style="width: 40px; height: 40px; background: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;">f</div>
+      </div>
+    </div>
+  </div>
+
+  <hr style="border: 0; border-top: 1px solid #333; margin: 40px 0;">
+
+  <div style="text-align: center; color: #666; font-size: 14px;">
+    &copy; 2026 AuthenChain. All rights reserved.
+  </div>
+</footer>

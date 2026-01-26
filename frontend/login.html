@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log In | AuthenChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      height: 100vh;
+      display: flex;
+      background-color: #ededed;
+      overflow: hidden;
+    }
+
+    /* LEFT SIDE - FORM */
+    .form-container {
+      flex: 1;
+      padding: 60px 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 650px;
+      background-color: #ededed;
+      position: relative;
+    }
+
+    .logo {
+      font-family: 'Poppins', sans-serif;
+      font-size: 24px;
+      font-weight: bold;
+      color: #030303;
+      margin-bottom: 60px;
+    }
+
+    .role-indicator {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 8px 16px;
+      background: #4169ff;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      width: fit-content;
+    }
+
+    h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      color: #030303;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      color: #030303;
+      margin-bottom: 50px;
+      font-size: 1rem;
+      opacity: 0.7;
+    }
+
+    .input-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #030303;
+      font-size: 0.95rem;
+    }
+
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid #d1d1d1;
+      border-radius: 8px;
+      font-size: 1rem;
+      background-color: #fff;
+      color: #030303;
+      transition: all 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #4169ff;
+      box-shadow: 0 0 0 3px rgba(65, 105, 255, 0.1);
+    }
+
+    .toggle-icon {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 1.2rem;
+      user-select: none;
+      transition: opacity 0.2s;
+    }
+
+    .toggle-icon:hover {
+      opacity: 0.7;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background-color: #4169ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.3s;
+    }
+
+    .btn-submit:hover {
+      background-color: #3052cc;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(65, 105, 255, 0.3);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    .btn-submit:disabled {
+      background-color: #d1d1d1;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .bottom-text {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 0.95rem;
+      color: #030303;
+    }
+
+    .bottom-text a {
+      color: #4169ff;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .bottom-text a:hover {
+      color: #3052cc;
+      text-decoration: underline;
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .back-link a {
+      color: #030303;
+      text-decoration: none;
+      font-size: 0.9rem;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .back-link a:hover {
+      opacity: 1;
+    }
+
+    /* RIGHT SIDE - VISUAL */
+    .visual-container {
+      flex: 1;
+      background: linear-gradient(135deg, #4169ff 0%, #3052cc 100%);
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .visual-content {
+      text-align: center;
+      color: white;
+      position: relative;
+      z-index: 10;
+    }
+
+    .visual-content h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      line-height: 1.2;
+    }
+
+    .visual-content p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      max-width: 1000px;
+      line-height: 1.6;
+    }
+
+    /* Decorative Elements */
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .circle-1 {
+      width: 300px;
+      height: 300px;
+      top: -100px;
+      right: -100px;
+      animation-delay: 0s;
+    }
+
+    .circle-2 {
+      width: 200px;
+      height: 200px;
+      bottom: -50px;
+      left: -50px;
+      animation-delay: 2s;
+    }
+
+    .circle-3 {
+      width: 150px;
+      height: 150px;
+      top: 50%;
+      left: 10%;
+      animation-delay: 4s;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0) scale(1);
+      }
+      50% {
+        transform: translateY(-30px) scale(1.05);
+      }
+    }
+
+    .lock-icon {
+      width: 120px;
+      height: 120px;
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .illustration img {
+      width: 420px;
+      max-width: 100%;
+      height: auto;
+      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.25));
+    }
+
+    .illustration {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-18px);
+  }
+}
+
+
+    @media (max-width: 900px) {
+      .visual-container { 
+        display: none; 
+      }
+      .form-container { 
+        max-width: 100%; 
+        padding: 40px;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .form-container {
+        padding: 30px 20px;
+      }
+      h1 {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    <div class="logo">AuthenChain</div>
+    
+    <div id="roleBadge" class="role-indicator">Verifier Portal</div>
+    
+    <h1 id="welcomeText">Welcome back</h1>
+    <p class="subtitle">Enter your credentials to access your account</p>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="input-group">
+        <label>Email address</label>
+        <input type="email" id="email" placeholder="Enter your email" required>
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" placeholder="••••••••" required>
+          <span class="toggle-icon" onclick="togglePassword('password', this)">👁️</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">Log In</button>
+    </form>
+
+    <p class="bottom-text">
+      Don't have an account? <a href="#" onclick="goToSignup()">Sign Up</a>
+    </p>
+    
+    <div class="back-link">
+      <a href="index.html">← Back to Home</a>
+    </div>
+  </div>
+
+  <div class="visual-container">
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+    <div class="circle circle-3"></div>
+    
+    <div class="visual-content">
+      <div class="illustration">
+  <img src="login.png" alt="Secure onboarding illustration">
+</div>
+
+      <h2>Secure Access to Your Documents</h2>
+      <p>Access your blockchain-verified documents with complete security and transparency. Your credentials are encrypted and protected.</p>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:5000/api/auth";
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentRole = urlParams.get('role') || 'verifier';
+
+    // Initialize UI
+    document.getElementById('roleBadge').innerText = `${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)} Portal`;
+
+    function goToSignup() {
+      window.location.href = `signup.html?role=${currentRole}`;
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const originalText = btn.innerText;
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      btn.innerText = "Processing...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_URL}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+           // STRICT ROLE CHECK
+           if (data.role && data.role !== currentRole) {
+               alert(`Access Denied: These credentials belong to a ${data.role.toUpperCase()} account.\nPlease log in via the ${data.role} page.`);
+               // Do NOT redirect.
+               // Reset button state
+               btn.innerText = originalText;
+               btn.disabled = false;
+               return; 
+            }
+
+            // Success - Roles Match
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("userRole", data.role);
+            window.location.href = data.role === 'issuer' ? 'issuer.html' : 'verifier.html';
+        } else {
+          alert(data.message || "Login failed");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Server error. Please check connection.");
+      } finally {
+        if (!btn.disabled) return; // If we returned early above, don't reset again
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function togglePassword(inputId, icon) {
+      const input = document.getElementById(inputId);
+      
+      if (input.type === "password") {
+        input.type = "text";
+        icon.innerText = "🔓";
+      } else {
+        input.type = "password";
+        icon.innerText = "👁️";
+      }
+    }
+  </script>
+</body>
+</html>
